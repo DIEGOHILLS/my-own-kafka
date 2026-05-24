@@ -44,7 +44,7 @@ public class SimpleKafkaClient {
 
             if (result.error == null) {
                 for (BrokerInfo broker : result.brokers) {
-                    // Store broker info for routing
+
                 }
                 for (Protocol.TopicMetadata tm : result.topics) {
                     topicMetadata.put(tm.name, tm);
@@ -90,8 +90,7 @@ public class SimpleKafkaClient {
             System.out.println("DEBUG Client: read " + bytesRead + " bytes");
             if (bytesRead > 0) {
                 System.out.println("DEBUG Client: first byte=" + responseBuffer.get(0) + " (expected " + Protocol.PRODUCE_RESPONSE + ")");
-                // Print all bytes for small responses
-                if (bytesRead <= 20) {
+                  if (bytesRead <= 20) {
                     StringBuilder sb = new StringBuilder("DEBUG Client: all bytes=[");
                     for (int i = 0; i < bytesRead; i++) {
                         sb.append(responseBuffer.get(i) & 0xFF);

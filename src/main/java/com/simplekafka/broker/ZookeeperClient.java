@@ -93,8 +93,7 @@ public class ZookeeperClient implements Watcher {
                 zooKeeper.create(parent, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
                 LOGGER.info("Created parent path: " + parent);
             } catch (KeeperException.NodeExistsException e) {
-                // Another broker created it concurrently, ignore
-            }
+             }
         }
     }
     

@@ -123,7 +123,6 @@ public class SimpleKafkaConsumer {
                 System.out.println("[Offset " + offset + "] " + text);
             });
 
-            // Keep main thread alive
             while (true) {
                 Thread.sleep(1000);
             }

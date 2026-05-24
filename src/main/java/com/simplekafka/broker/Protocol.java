@@ -198,7 +198,7 @@ public class Protocol {
             buffer.flip();
             channel.write(buffer);
         } catch (Exception e) {
-            // Log error if needed
+
         }
     }
 

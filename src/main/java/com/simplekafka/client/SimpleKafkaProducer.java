@@ -27,7 +27,7 @@ public class SimpleKafkaProducer {
     public long send(String message) throws IOException {
         client.refreshMetadata();
         
-        // Auto-create topic if it doesn't exist
+        // Auto-create topic if one doesn't exist
         if (!topicExists(topic)) {
             createTopic();
         }
@@ -48,8 +48,7 @@ public class SimpleKafkaProducer {
     }
     
     private boolean topicExists(String topic) {
-        // Check cached metadata
-        for (Protocol.TopicMetadata tm : client.topicMetadata.values()) {
+         for (Protocol.TopicMetadata tm : client.topicMetadata.values()) {
             if (tm.name.equals(topic)) {
                 return true;
             }
@@ -83,8 +82,7 @@ public class SimpleKafkaProducer {
             if (errorCode != 0 && type != Protocol.CREATE_TOPIC_RESPONSE) {
                 throw new IOException("Failed to create topic, error code: " + errorCode);
             }
-            
-            // Refresh metadata after creation
+
             client.refreshMetadata();
             
         } catch (IOException e) {
