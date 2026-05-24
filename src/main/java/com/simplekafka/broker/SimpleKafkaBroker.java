@@ -90,6 +90,8 @@ public class SimpleKafkaBroker {
         try {
             zkClient.connect();
 
+            zkClient.createPersistentNode("/brokers/ids", "");
+
             String brokerData = "{\"host\":\"" + brokerHost + "\",\"port\":" + brokerPort + ",\"endpoints\":[]}";
             zkClient.createEphemeralNode("/brokers/ids/" + brokerId, brokerData);
 
@@ -323,6 +325,8 @@ public class SimpleKafkaBroker {
     }
 
     private void handleProduceRequest(SocketChannel clientChannel, ByteBuffer buffer) throws IOException {
+        System.out.println("DEBUG Broker " + brokerId + ": handleProduceRequest called");
+
         short topicLen = buffer.getShort();
         byte[] topicBytes = new byte[topicLen];
         buffer.get(topicBytes);
@@ -333,30 +337,40 @@ public class SimpleKafkaBroker {
         byte[] message = new byte[msgLen];
         buffer.get(message);
 
+        System.out.println("DEBUG Broker " + brokerId + ": topic=" + topic + ", partition=" + partition + ", msgLen=" + msgLen);
+
         Map<Integer, Partition> partitions = topics.get(topic);
         if (partitions == null) {
+            System.out.println("DEBUG Broker " + brokerId + ": Topic not found: " + topic);
             Protocol.sendErrorResponse(clientChannel, "Topic not found: " + topic);
             return;
         }
 
         Partition p = partitions.get(partition);
         if (p == null) {
+            System.out.println("DEBUG Broker " + brokerId + ": Partition not found: " + partition);
             Protocol.sendErrorResponse(clientChannel, "Partition not found: " + partition);
             return;
         }
 
+        System.out.println("DEBUG Broker " + brokerId + ": partition leader=" + p.getLeader() + ", my brokerId=" + brokerId);
+
         if (p.getLeader() != brokerId) {
             BrokerInfo leaderBroker = clusterMetadata.get(p.getLeader());
             if (leaderBroker != null) {
+                System.out.println("DEBUG Broker " + brokerId + ": Forwarding to leader " + p.getLeader());
                 forwardToLeader(leaderBroker, clientChannel, buffer);
                 return;
             } else {
+                System.out.println("DEBUG Broker " + brokerId + ": Leader not available");
                 Protocol.sendErrorResponse(clientChannel, "Leader not available");
                 return;
             }
         }
 
         long offset = p.append(message);
+        System.out.println("DEBUG Broker " + brokerId + ": Appended message at offset=" + offset);
+
         replicateToFollowers(topic, p, message, offset);
 
         ByteBuffer response = ByteBuffer.allocate(1 + 8 + 2);
@@ -364,7 +378,10 @@ public class SimpleKafkaBroker {
         response.putLong(offset);
         response.putShort((short) 0);
         response.flip();
-        clientChannel.write(response);
+
+        System.out.println("DEBUG Broker " + brokerId + ": Sending response bytes=" + response.remaining() + ", type=" + Protocol.PRODUCE_RESPONSE);
+        int written = clientChannel.write(response);
+        System.out.println("DEBUG Broker " + brokerId + ": Wrote " + written + " bytes");
     }
 
     private void forwardToLeader(BrokerInfo leader, SocketChannel clientChannel, ByteBuffer buffer) {

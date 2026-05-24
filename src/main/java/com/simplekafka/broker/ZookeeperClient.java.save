@@ -71,7 +71,6 @@ public class ZookeeperClient implements Watcher {
         Stat stat = zooKeeper.exists(path, false);
         if (stat == null) {
             ensurePathExists(path);
-            ensurePathExists(path);
             zooKeeper.create(path, data.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
             LOGGER.info("Created ephemeral node: " + path);
             return true;

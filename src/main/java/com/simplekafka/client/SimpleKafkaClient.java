@@ -13,9 +13,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SimpleKafkaClient {
-    private final String bootstrapBroker;
-    private final int bootstrapPort;
-    private final Map<String, Protocol.TopicMetadata> topicMetadata;
+    public final String bootstrapBroker;
+    public final int bootstrapPort;
+    public final Map<String, Protocol.TopicMetadata> topicMetadata;
     private SocketChannel bootstrapChannel;
 
     public SimpleKafkaClient(String bootstrapBroker, int bootstrapPort) {
@@ -83,8 +83,24 @@ public class SimpleKafkaClient {
             brokerChannel.write(request);
 
             ByteBuffer responseBuffer = ByteBuffer.allocate(1024);
-            brokerChannel.read(responseBuffer);
+            int bytesRead = brokerChannel.read(responseBuffer);
             responseBuffer.flip();
+
+            // DEBUG
+            System.out.println("DEBUG Client: read " + bytesRead + " bytes");
+            if (bytesRead > 0) {
+                System.out.println("DEBUG Client: first byte=" + responseBuffer.get(0) + " (expected " + Protocol.PRODUCE_RESPONSE + ")");
+                // Print all bytes for small responses
+                if (bytesRead <= 20) {
+                    StringBuilder sb = new StringBuilder("DEBUG Client: all bytes=[");
+                    for (int i = 0; i < bytesRead; i++) {
+                        sb.append(responseBuffer.get(i) & 0xFF);
+                        if (i < bytesRead - 1) sb.append(", ");
+                    }
+                    sb.append("]");
+                    System.out.println(sb.toString());
+                }
+            }
 
             Protocol.ProduceResult result = Protocol.decodeProduceResponse(responseBuffer);
             if (result.error != null) {
